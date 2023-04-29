@@ -1,4 +1,18 @@
-# Getting Started with Create React App
+# SONGIFYAPP5
+
+Objectif : CRÉER UNE APP QUI TRANSFORME DES TITRE MUSICAUX EN GIFS 
+
+## Description
+
+L'utilisateur peut rechercher un titre musical en tapant le titre dans une champs texte. Le champ texte propose des résultats pendant que l'utilisateur tape le titre du son. Lorsque l'utilisateur clic sur une suggestion, la page du titre musical s'affiche.
+
+## Prérequis
+
+1. Installer Node.js sur le site officiel https://nodejs.org/en
+2. Installer React `npm install -g create-react-app`
+3. Installer Tailwind `npm install -D tailwindcss`
+
+## Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
