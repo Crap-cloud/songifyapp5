@@ -1,44 +1,84 @@
 import React, { useState, useEffect } from 'react';
-import {api_key} from '../API_KEYS';
+import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
+
+const GENIUS_API_URL = "https://api.genius.com";
+const TOKEN = process.env.REACT_APP_GENIUS_TOKEN;
+const CLIENT_ID = process.env.REACT_APP_CLIENT_ID;
+const CLIENT_SECRET = process.env.REACT_APP_CLIENT_SECRET;
+const REDIRECT_URI = process.env.REACT_APP_REDIRECT_URI;
+const REQUESTED_SCOPE = "me";
+
+// Récupérer le code à partir de l'URL de redirection
+const urlParams = new URLSearchParams(window.location.search);
+const code = urlParams.get("code");
+if (!code) {
+  // Rediriger l'utilisateur vers la page d'autorisation de Genius
+  const authParams = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    scope: REQUESTED_SCOPE,
+    state: uuidv4(),
+    response_type: "code",
+  });
+
+  window.location.href = `https://api.genius.com/oauth/authorize?${authParams}`;
+}
 
 function SearchBar() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [token, setToken] = useState(localStorage.getItem("accessToken"));
 
+  useEffect(() => {
+    const fetchToken = async () => {
+      if (code) {
+        try {
+          const tokenParams = new URLSearchParams({
+            code: code,
+            client_id: CLIENT_ID,
+            client_secret: CLIENT_SECRET,
+            redirect_uri: REDIRECT_URI,
+            grant_type: "authorization_code",
+          });
+          const response = await axios.post("https://api.genius.com/oauth/token", tokenParams, {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            }
+          });
+          const myToken = response.data.access_token;
+          localStorage.setItem("accessToken", myToken);
+          setToken(myToken);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    };
+    fetchToken();
+  }, []);
 
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (searchTerm.length >= 3) {
-
         try {
-          let response = await fetch(`https://cors-anywhere.herokuapp.com/http://api.genius.com/search?q=${searchTerm}&access_token=${api_key}&text_format=plain`, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0',
-              'Content-Type': 'application/json',
-            },
-            mode: 'cors'
-          });
-          
-          console.log(response);
-          const data = await response.json();
-          const searchResults = data.response.hits.map(hit => ({
+          const response = await axios.get(
+            `${GENIUS_API_URL}/search?q=${searchTerm}&access_token=${token}`,
+          );
+          const searchResults = response.data.response.hits.map((hit) => ({
             title: hit.result.title,
-            artist: hit.result.primary_artist.name
+            artist: hit.result.primary_artist.name,
           }));
           setSearchResults(searchResults);
-          
         } catch (error) {
           console.log(error);
         }
-
       } else {
         setSearchResults([]);
       }
     };
-    
+  
     fetchSearchResults();
   }, [searchTerm]);
-
 
   const handleSearchResultClick = (hit) => {
     setSearchTerm(hit.title + ' - ' + hit.artist);
